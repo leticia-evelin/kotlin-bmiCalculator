@@ -1,5 +1,6 @@
 package br.senai.sp.jandira.bmicalculator
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -11,15 +12,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -30,9 +30,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.senai.sp.jandira.bmicalculator.calculate.calculate
+import br.senai.sp.jandira.bmicalculator.calculate.getBmiClassification
 import br.senai.sp.jandira.bmicalculator.model.Client
 import br.senai.sp.jandira.bmicalculator.model.Product
 import br.senai.sp.jandira.bmicalculator.ui.theme.BMICalculatorTheme
+import kotlin.reflect.typeOf
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,17 +64,26 @@ class MainActivity : ComponentActivity() {
 fun CalculatorScreen() {
 
 //classe peso
-    var weightState = rememberSaveable {
+    var weightState by rememberSaveable {
         mutableStateOf("")
     }
 // classe altura
-    var heightState = rememberSaveable { // salvar o numero quando rotar a tela
+    var heightState by rememberSaveable { // salvar o numero quando rotar a tela
         mutableStateOf("")
     }
 
-    var bmiState = rememberSaveable {
+    var bmiState by rememberSaveable {
         mutableStateOf("0.0")
     }
+
+    var bmiClassificationState by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    val context = LocalContext.current.applicationContext
+    val context2 = LocalContext.current
+
+
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -106,10 +117,10 @@ fun CalculatorScreen() {
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 OutlinedTextField(
-                    value = weightState.value, //variavel de estado
+                    value = weightState, //variavel de estado
                     onValueChange = {
                         Log.i("ds2m", it)
-                        weightState.value = it
+                        weightState = it
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -120,9 +131,9 @@ fun CalculatorScreen() {
                     modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
                 )
                 OutlinedTextField(
-                    value = heightState.value, //variavel de estado
+                    value = heightState, //variavel de estado
                     onValueChange = {
-                        heightState.value = it
+                        heightState = it
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -130,11 +141,13 @@ fun CalculatorScreen() {
                 )
                 Spacer(modifier = Modifier.height(48.dp))
                 Button(
+
                     onClick = {
-                        bmiState.value = calculate(
-                            weight = weightState.value.toDouble(),
-                            height = heightState.value.toDouble()
-                        ).toString()
+                        var w = weightState.toDouble()
+                        var h = heightState.toDouble()
+                        var bmi = calculate(weight = w, height =  h)
+                        bmiState = String.format("%.2f", bmi)
+                        bmiClassificationState = getBmiClassification(bmi, context)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
@@ -173,22 +186,31 @@ fun CalculatorScreen() {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = bmiState.value,
+                            text = bmiState,
                             color = Color.White,
                             fontSize = 48.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = stringResource(id = R.string.ideal_state),
+                            text = bmiClassificationState,
                             color = Color.White,
                             fontSize = 20.sp
                         )
                         Row() {
-                            Button(onClick = { /*TODO*/ }) {
+                            Button(onClick =  {
+                                weightState = ""
+                                heightState = ""
+                                bmiClassificationState = ""
+                                bmiState = ""
+
+                                }) {
                                 Text(text = stringResource(id = R.string.reset))
                             }
                             Spacer(modifier = Modifier.width(24.dp))
-                            Button(onClick = { /*TODO*/ }) {
+                            Button(onClick = {
+                                val openOther = Intent(context2, SignUpActivity::class.java)
+                                context2.startActivity(openOther)
+                            }) {
                                 Text(text = stringResource(id = R.string.share))
                             }
                         }
